@@ -1,249 +1,233 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Assignments Hub</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dino Run Deluxe</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Poppins', sans-serif;
+    }
 
-    <style>
-        body {
-            font-family: Arial, Helvetica, sans-serif;
-            background: #f5f5f5;
-            margin: 0;
-            padding: 40px;
-        }
+    body {
+      background: linear-gradient(to bottom, #87ceeb, #e0f7fa);
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
 
-        h1 {
-            text-align: center;
-            margin-bottom: 30px;
-        }
+    h1 {
+      color: #333;
+      margin-bottom: 10px;
+      font-size: 2.5rem;
+      text-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
 
-        .assignment-box {
-            background: white;
-            padding: 18px;
-            border-radius: 10px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            margin-bottom: 12px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
+    .game-container {
+      position: relative;
+      width: 800px;
+      height: 300px;
+      overflow: hidden;
+      border-radius: 15px;
+      background: linear-gradient(to top, #fceabb, #f8b500);
+      box-shadow: 0 0 30px rgba(0,0,0,0.3);
+    }
 
-        .assignment-box a {
-            text-decoration: none;
-            color: white;
-            background: black;
-            padding: 8px 14px;
-            border-radius: 6px;
-        }
-    </style>
+    canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .score {
+      position: absolute;
+      top: 10px;
+      right: 20px;
+      font-size: 1.5rem;
+      color: white;
+      text-shadow: 0 0 5px rgba(0,0,0,0.3);
+    }
+
+    .restart-btn {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: linear-gradient(90deg, #00c6ff, #0072ff);
+      color: white;
+      border: none;
+      padding: 10px 25px;
+      border-radius: 25px;
+      font-size: 1rem;
+      cursor: pointer;
+      box-shadow: 0 0 10px rgba(0, 114, 255, 0.6);
+      transition: all 0.3s ease;
+      display: none;
+    }
+
+    .restart-btn:hover {
+      background: linear-gradient(90deg, #0072ff, #00c6ff);
+      transform: translateX(-50%) scale(1.1);
+      box-shadow: 0 0 20px rgba(0, 114, 255, 0.9);
+    }
+
+    .night {
+      background: linear-gradient(to bottom, #00111a, #003366);
+    }
+  </style>
 </head>
-
 <body>
+  <h1>🦖 Dino Run Deluxe</h1>
+  <div class="game-container">
+    <canvas id="game"></canvas>
+    <div class="score" id="score">Score: 0</div>
+    <button id="restart" class="restart-btn">Restart</button>
+  </div>
 
-<h1>📚 My Assignments</h1>
+  <script>
+    const canvas = document.getElementById("game");
+    const ctx = canvas.getContext("2d");
+    const scoreEl = document.getElementById("score");
+    const restartBtn = document.getElementById("restart");
+    const container = document.querySelector(".game-container");
 
-<!-- 40 Assignment Slots -->
-<div class="assignment-box">
-    <span>Assignment 1</span>
-    <a href="./dino run deluxe.html">Open</a>
-</div>
+    canvas.width = 800;
+    canvas.height = 300;
 
-<div class="assignment-box">
-    <span>Assignment 2</span>
-    <a href="./hunter.html">Open</a>
-</div>
+    let dino = { x: 50, y: 200, width: 50, height: 50, dy: 0, gravity: 1, jumpPower: -15, grounded: true };
+    let obstacles = [];
+    let score = 0;
+    let gameSpeed = 6;
+    let gameActive = true;
+    let nightMode = false;
 
-<div class="assignment-box">
-    <span>Assignment 3</span>
-    <a href="./GAMING.HTML">Open</a>
-</div>
+    function drawDino() {
+      ctx.fillStyle = "#4caf50";
+      ctx.fillRect(dino.x, dino.y, dino.width, dino.height);
+      ctx.fillStyle = "#fff";
+      ctx.fillRect(dino.x + 30, dino.y + 10, 5, 5);
+    }
 
-<div class="assignment-box">
-    <span>Assignment 4</span>
-    <a href=".">Open</a>
-</div>
+    function drawGround() {
+      ctx.fillStyle = "#654321";
+      ctx.fillRect(0, 250, canvas.width, 5);
+    }
 
-<div class="assignment-box">
-    <span>Assignment 5</span>
-    <a href=".">Open</a>
-</div>
+    function spawnObstacle() {
+      const height = Math.random() * 30 + 30;
+      obstacles.push({ x: canvas.width, y: 250 - height, width: 20, height });
+    }
 
-<div class="assignment-box">
-    <span>Assignment 6</span>
-    <a href=".">Open</a>
-</div>
+    function drawObstacles() {
+      ctx.fillStyle = "#ff5722";
+      obstacles.forEach(o => ctx.fillRect(o.x, o.y, o.width, o.height));
+    }
 
-<div class="assignment-box">
-    <span>Assignment 7</span>
-    <a href=".">Open</a>
-</div>
+    function updateObstacles() {
+      obstacles.forEach(o => o.x -= gameSpeed);
+      obstacles = obstacles.filter(o => o.x + o.width > 0);
+    }
 
-<div class="assignment-box">
-    <span>Assignment 8</span>
-    <a href=".">Open</a>
-</div>
+    function jump() {
+      if (dino.grounded && gameActive) {
+        dino.dy = dino.jumpPower;
+        dino.grounded = false;
+      }
+    }
 
-<div class="assignment-box">
-    <span>Assignment 9</span>
-    <a href=".">Open</a>
-</div>
+    function updateDino() {
+      dino.y += dino.dy;
+      dino.dy += dino.gravity;
+      if (dino.y >= 200) {
+        dino.y = 200;
+        dino.dy = 0;
+        dino.grounded = true;
+      }
+    }
 
-<div class="assignment-box">
-    <span>Assignment 10</span>
-    <a href=".">Open</a>
-</div>
+    function detectCollision() {
+      for (let o of obstacles) {
+        if (
+          dino.x < o.x + o.width &&
+          dino.x + dino.width > o.x &&
+          dino.y < o.y + o.height &&
+          dino.y + dino.height > o.y
+        ) {
+          gameOver();
+        }
+      }
+    }
 
-<div class="assignment-box">
-    <span>Assignment 11</span>
-    <a href=".">Open</a>
-</div>
+    function gameOver() {
+      gameActive = false;
+      restartBtn.style.display = "block";
+      ctx.fillStyle = "rgba(0,0,0,0.5)";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = "#fff";
+      ctx.font = "30px Poppins";
+      ctx.fillText("Game Over!", 320, 150);
+    }
 
-<div class="assignment-box">
-    <span>Assignment 12</span>
-    <a href=".">Open</a>
-</div>
+    function toggleDayNight() {
+      if (score % 200 === 0 && score > 0) {
+        nightMode = !nightMode;
+        container.classList.toggle("night");
+      }
+    }
 
-<div class="assignment-box">
-    <span>Assignment 13</span>
-    <a href=".">Open</a>
-</div>
+    function updateScore() {
+      score++;
+      scoreEl.textContent = "Score: " + score;
+    }
 
-<div class="assignment-box">
-    <span>Assignment 14</span>
-    <a href=".">Open</a>
-</div>
+    let obstacleTimer = 0;
+    function gameLoop() {
+      if (!gameActive) return;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-<div class="assignment-box">
-    <span>Assignment 15</span>
-    <a href=".">Open</a>
-</div>
+      drawGround();
+      drawDino();
+      drawObstacles();
+      updateDino();
+      updateObstacles();
+      detectCollision();
 
-<div class="assignment-box">
-    <span>Assignment 16</span>
-    <a href=".">Open</a>
-</div>
+      obstacleTimer++;
+      if (obstacleTimer > 70) {
+        spawnObstacle();
+        obstacleTimer = 0;
+      }
 
-<div class="assignment-box">
-    <span>Assignment 17</span>
-    <a href=".">Open</a>
-</div>
+      updateScore();
+      toggleDayNight();
 
-<div class="assignment-box">
-    <span>Assignment 18</span>
-    <a href=".">Open</a>
-</div>
+      requestAnimationFrame(gameLoop);
+    }
 
-<div class="assignment-box">
-    <span>Assignment 19</span>
-    <a href=".">Open</a>
-</div>
+    document.addEventListener("keydown", (e) => {
+      if (e.code === "Space" || e.code === "ArrowUp") jump();
+    });
 
-<div class="assignment-box">
-    <span>Assignment 20</span>
-    <a href=".">Open</a>
-</div>
+    restartBtn.addEventListener("click", () => {
+      restartBtn.style.display = "none";
+      obstacles = [];
+      score = 0;
+      gameSpeed = 6;
+      gameActive = true;
+      dino.y = 200;
+      dino.dy = 0;
+      scoreEl.textContent = "Score: 0";
+      container.classList.remove("night");
+      requestAnimationFrame(gameLoop);
+    });
 
-<div class="assignment-box">
-    <span>Assignment 21</span>
-    <a href=".">Open</a>
-</div>
-
-<div class="assignment-box">
-    <span>Assignment 22</span>
-    <a href=".">Open</a>
-</div>
-
-<div class="assignment-box">
-    <span>Assignment 23</span>
-    <a href=".">Open</a>
-</div>
-
-<div class="assignment-box">
-    <span>Assignment 24</span>
-    <a href=".">Open</a>
-</div>
-
-<div class="assignment-box">
-    <span>Assignment 25</span>
-    <a href=".">Open</a>
-</div>
-
-<div class="assignment-box">
-    <span>Assignment 26</span>
-    <a href=".">Open</a>
-</div>
-
-<div class="assignment-box">
-    <span>Assignment 27</span>
-    <a href=".">Open</a>
-</div>
-
-<div class="assignment-box">
-    <span>Assignment 28</span>
-    <a href=".">Open</a>
-</div>
-
-<div class="assignment-box">
-    <span>Assignment 29</span>
-    <a href=".">Open</a>
-</div>
-
-<div class="assignment-box">
-    <span>Assignment 30</span>
-    <a href=".">Open</a>
-</div>
-
-<div class="assignment-box">
-    <span>Assignment 31</span>
-    <a href=".">Open</a>
-</div>
-
-<div class="assignment-box">
-    <span>Assignment 32</span>
-    <a href=".">Open</a>
-</div>
-
-<div class="assignment-box">
-    <span>Assignment 33</span>
-    <a href=".">Open</a>
-</div>
-
-<div class="assignment-box">
-    <span>Assignment 34</span>
-    <a href=".">Open</a>
-</div>
-
-<div class="assignment-box">
-    <span>Assignment 35</span>
-    <a href=".">Open</a>
-</div>
-
-<div class="assignment-box">
-    <span>Assignment 36</span>
-    <a href=".">Open</a>
-</div>
-
-<div class="assignment-box">
-    <span>Assignment 37</span>
-    <a href=".">Open</a>
-</div>
-
-<div class="assignment-box">
-    <span>Assignment 38</span>
-    <a href=".">Open</a>
-</div>
-
-<div class="assignment-box">
-    <span>Assignment 39</span>
-    <a href=".">Open</a>
-</div>
-
-<div class="assignment-box">
-    <span>Assignment 40</span>
-    <a href=".">Open</a>
-</div>
-
-<script src="./app.js"></script>
+    requestAnimationFrame(gameLoop);
+  </script>
 </body>
 </html>
