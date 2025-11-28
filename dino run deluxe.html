@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dino Run Deluxe</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Poppins', sans-serif;
+    }
+
+    body {
+      background: linear-gradient(to bottom, #87ceeb, #e0f7fa);
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+
+    h1 {
+      color: #333;
+      margin-bottom: 10px;
+      font-size: 2.5rem;
+      text-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    .game-container {
+      position: relative;
+      width: 800px;
+      height: 300px;
+      overflow: hidden;
+      border-radius: 15px;
+      background: linear-gradient(to top, #fceabb, #f8b500);
+      box-shadow: 0 0 30px rgba(0,0,0,0.3);
+    }
+
+    canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .score {
+      position: absolute;
+      top: 10px;
+      right: 20px;
+      font-size: 1.5rem;
+      color: white;
+      text-shadow: 0 0 5px rgba(0,0,0,0.3);
+    }
+
+    .restart-btn {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: linear-gradient(90deg, #00c6ff, #0072ff);
+      color: white;
+      border: none;
+      padding: 10px 25px;
+      border-radius: 25px;
+      font-size: 1rem;
+      cursor: pointer;
+      box-shadow: 0 0 10px rgba(0, 114, 255, 0.6);
+      transition: all 0.3s ease;
+      display: none;
+    }
+
+    .restart-btn:hover {
+      background: linear-gradient(90deg, #0072ff, #00c6ff);
+      transform: translateX(-50%) scale(1.1);
+      box-shadow: 0 0 20px rgba(0, 114, 255, 0.9);
+    }
+
+    .night {
+      background: linear-gradient(to bottom, #00111a, #003366);
+    }
+  </style>
+</head>
+<body>
+  <h1>🦖 Dino Run Deluxe</h1>
+  <div class="game-container">
+    <canvas id="game"></canvas>
+    <div class="score" id="score">Score: 0</div>
+    <button id="restart" class="restart-btn">Restart</button>
+  </div>
+
+  <script>
+    const canvas = document.getElementById("game");
+    const ctx = canvas.getContext("2d");
+    const scoreEl = document.getElementById("score");
+    const restartBtn = document.getElementById("restart");
+    const container = document.querySelector(".game-container");
+
+    canvas.width = 800;
+    canvas.height = 300;
+
+    let dino = { x: 50, y: 200, width: 50, height: 50, dy: 0, gravity: 1, jumpPower: -15, grounded: true };
+    let obstacles = [];
+    let score = 0;
+    let gameSpeed = 6;
+    let gameActive = true;
+    let nightMode = false;
+
+    function drawDino() {
+      ctx.fillStyle = "#4caf50";
+      ctx.fillRect(dino.x, dino.y, dino.width, dino.height);
+      ctx.fillStyle = "#fff";
+      ctx.fillRect(dino.x + 30, dino.y + 10, 5, 5);
+    }
+
+    function drawGround() {
+      ctx.fillStyle = "#654321";
+      ctx.fillRect(0, 250, canvas.width, 5);
+    }
+
+    function spawnObstacle() {
+      const height = Math.random() * 30 + 30;
+      obstacles.push({ x: canvas.width, y: 250 - height, width: 20, height });
+    }
+
+    function drawObstacles() {
+      ctx.fillStyle = "#ff5722";
+      obstacles.forEach(o => ctx.fillRect(o.x, o.y, o.width, o.height));
+    }
+
+    function updateObstacles() {
+      obstacles.forEach(o => o.x -= gameSpeed);
+      obstacles = obstacles.filter(o => o.x + o.width > 0);
+    }
+
+    function jump() {
+      if (dino.grounded && gameActive) {
+        dino.dy = dino.jumpPower;
+        dino.grounded = false;
+      }
+    }
+
+    function updateDino() {
+      dino.y += dino.dy;
+      dino.dy += dino.gravity;
+      if (dino.y >= 200) {
+        dino.y = 200;
+        dino.dy = 0;
+        dino.grounded = true;
+      }
+    }
+
+    function detectCollision() {
+      for (let o of obstacles) {
+        if (
+          dino.x < o.x + o.width &&
+          dino.x + dino.width > o.x &&
+          dino.y < o.y + o.height &&
+          dino.y + dino.height > o.y
+        ) {
+          gameOver();
+        }
+      }
+    }
+
+    function gameOver() {
+      gameActive = false;
+      restartBtn.style.display = "block";
+      ctx.fillStyle = "rgba(0,0,0,0.5)";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = "#fff";
+      ctx.font = "30px Poppins";
+      ctx.fillText("Game Over!", 320, 150);
+    }
+
+    function toggleDayNight() {
+      if (score % 200 === 0 && score > 0) {
+        nightMode = !nightMode;
+        container.classList.toggle("night");
+      }
+    }
+
+    function updateScore() {
+      score++;
+      scoreEl.textContent = "Score: " + score;
+    }
+
+    let obstacleTimer = 0;
+    function gameLoop() {
+      if (!gameActive) return;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      drawGround();
+      drawDino();
+      drawObstacles();
+      updateDino();
+      updateObstacles();
+      detectCollision();
+
+      obstacleTimer++;
+      if (obstacleTimer > 70) {
+        spawnObstacle();
+        obstacleTimer = 0;
+      }
+
+      updateScore();
+      toggleDayNight();
+
+      requestAnimationFrame(gameLoop);
+    }
+
+    document.addEventListener("keydown", (e) => {
+      if (e.code === "Space" || e.code === "ArrowUp") jump();
+    });
+
+    restartBtn.addEventListener("click", () => {
+      restartBtn.style.display = "none";
+      obstacles = [];
+      score = 0;
+      gameSpeed = 6;
+      gameActive = true;
+      dino.y = 200;
+      dino.dy = 0;
+      scoreEl.textContent = "Score: 0";
+      container.classList.remove("night");
+      requestAnimationFrame(gameLoop);
+    });
+
+    requestAnimationFrame(gameLoop);
+  </script>
+</body>
+</html>
