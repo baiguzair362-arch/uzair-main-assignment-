@@ -1,0 +1,244 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🏃‍♂️ Street Runner Deluxe</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: "Poppins", sans-serif;
+    }
+
+    body {
+      background: linear-gradient(to top, #003366, #0099ff);
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    canvas {
+      background: linear-gradient(to top, #4a90e2, #87cefa);
+      border-radius: 15px;
+      box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
+    }
+
+    #score {
+      position: absolute;
+      top: 20px;
+      left: 30px;
+      font-size: 1.5rem;
+      color: white;
+      text-shadow: 0 0 10px rgba(0,0,0,0.4);
+    }
+
+    #restart {
+      position: absolute;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: linear-gradient(90deg, #ff416c, #ff4b2b);
+      color: white;
+      border: none;
+      border-radius: 25px;
+      padding: 12px 30px;
+      font-size: 1.1rem;
+      cursor: pointer;
+      box-shadow: 0 0 20px rgba(255, 75, 43, 0.7);
+      display: none;
+      transition: 0.3s;
+    }
+
+    #restart:hover {
+      transform: translateX(-50%) scale(1.1);
+      box-shadow: 0 0 30px rgba(255, 75, 43, 1);
+    }
+  </style>
+</head>
+<body>
+  <canvas id="game" width="800" height="400"></canvas>
+  <div id="score">Score: 0</div>
+  <button id="restart">Restart</button>
+
+  <script>
+    const canvas = document.getElementById("game");
+    const ctx = canvas.getContext("2d");
+    const scoreEl = document.getElementById("score");
+    const restartBtn = document.getElementById("restart");
+
+    let player = { x: 100, y: 300, w: 40, h: 60, dy: 0, gravity: 1, grounded: true };
+    let groundY = 360;
+    let obstacles = [];
+    let clouds = [];
+    let score = 0;
+    let gameActive = true;
+    let speed = 6;
+    let spawnTimer = 0;
+
+    function drawBackground() {
+      // Sky gradient
+      let gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+      gradient.addColorStop(0, "#87cefa");
+      gradient.addColorStop(1, "#4a90e2");
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Clouds
+      ctx.fillStyle = "rgba(255,255,255,0.8)";
+      clouds.forEach(cloud => {
+        ctx.beginPath();
+        ctx.arc(cloud.x, cloud.y, 25, 0, Math.PI * 2);
+        ctx.arc(cloud.x + 25, cloud.y + 10, 20, 0, Math.PI * 2);
+        ctx.arc(cloud.x - 25, cloud.y + 10, 20, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      // Ground
+      ctx.fillStyle = "#006400";
+      ctx.fillRect(0, groundY, canvas.width, 50);
+    }
+
+    function drawPlayer() {
+      ctx.fillStyle = "#FFD700";
+      ctx.fillRect(player.x, player.y, player.w, player.h);
+      ctx.fillStyle = "#fff";
+      ctx.fillRect(player.x + 10, player.y + 10, 5, 5);
+    }
+
+    function drawObstacles() {
+      obstacles.forEach(o => {
+        ctx.fillStyle = "#8B0000";
+        ctx.fillRect(o.x, o.y, o.w, o.h);
+      });
+    }
+
+    function jump() {
+      if (player.grounded && gameActive) {
+        player.dy = -18;
+        player.grounded = false;
+      }
+    }
+
+    function updatePlayer() {
+      player.y += player.dy;
+      player.dy += player.gravity;
+
+      if (player.y >= groundY - player.h) {
+        player.y = groundY - player.h;
+        player.dy = 0;
+        player.grounded = true;
+      }
+    }
+
+    function spawnObstacle() {
+      obstacles.push({
+        x: canvas.width,
+        y: groundY - 30,
+        w: 30,
+        h: 30
+      });
+    }
+
+    function spawnCloud() {
+      clouds.push({
+        x: canvas.width,
+        y: Math.random() * 120 + 40,
+        speed: Math.random() * 1.5 + 0.5
+      });
+    }
+
+    function updateObstacles() {
+      obstacles.forEach(o => o.x -= speed);
+      obstacles = obstacles.filter(o => o.x + o.w > 0);
+    }
+
+    function updateClouds() {
+      clouds.forEach(c => c.x -= c.speed);
+      clouds = clouds.filter(c => c.x > -60);
+    }
+
+    function detectCollision() {
+      for (let o of obstacles) {
+        if (
+          player.x < o.x + o.w &&
+          player.x + player.w > o.x &&
+          player.y < o.y + o.h &&
+          player.y + player.h > o.y
+        ) {
+          gameOver();
+        }
+      }
+    }
+
+    function updateScore() {
+      score++;
+      scoreEl.textContent = "Score: " + score;
+    }
+
+    function gameOver() {
+      gameActive = false;
+      restartBtn.style.display = "block";
+      ctx.fillStyle = "rgba(0,0,0,0.5)";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = "#fff";
+      ctx.font = "40px Poppins";
+      ctx.fillText("GAME OVER", 300, 200);
+    }
+
+    document.addEventListener("keydown", e => {
+      if (e.code === "Space" || e.code === "ArrowUp") jump();
+    });
+
+    restartBtn.addEventListener("click", () => {
+      obstacles = [];
+      clouds = [];
+      score = 0;
+      speed = 6;
+      player.y = groundY - player.h;
+      player.dy = 0;
+      gameActive = true;
+      restartBtn.style.display = "none";
+      requestAnimationFrame(gameLoop);
+    });
+
+    let cloudTimer = 0;
+    function gameLoop() {
+      if (!gameActive) return;
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      drawBackground();
+      drawPlayer();
+      drawObstacles();
+
+      updatePlayer();
+      updateObstacles();
+      updateClouds();
+      detectCollision();
+      updateScore();
+
+      spawnTimer++;
+      cloudTimer++;
+
+      if (spawnTimer > 80) {
+        spawnObstacle();
+        spawnTimer = 0;
+      }
+
+      if (cloudTimer > 100) {
+        spawnCloud();
+        cloudTimer = 0;
+      }
+
+      requestAnimationFrame(gameLoop);
+    }
+
+    gameLoop();
+  </script>
+</body>
+</html>

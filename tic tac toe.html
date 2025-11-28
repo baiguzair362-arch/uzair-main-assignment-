@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tic Tac Toe Deluxe</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: 'Poppins', sans-serif;
+    }
+
+    body {
+      background: radial-gradient(circle at top left, #1e3c72, #2a5298);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      margin: 0;
+      color: white;
+    }
+
+    h1 {
+      font-size: 3rem;
+      margin-bottom: 20px;
+      text-shadow: 0 0 20px rgba(255,255,255,0.5);
+      letter-spacing: 2px;
+    }
+
+    .board {
+      display: grid;
+      grid-template-columns: repeat(3, 120px);
+      grid-template-rows: repeat(3, 120px);
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .cell {
+      background: rgba(255,255,255,0.1);
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3rem;
+      color: white;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 0 10px rgba(255,255,255,0.2);
+    }
+
+    .cell:hover {
+      background: rgba(255,255,255,0.2);
+      transform: scale(1.05);
+      box-shadow: 0 0 20px rgba(255,255,255,0.4);
+    }
+
+    .cell.taken {
+      cursor: not-allowed;
+    }
+
+    .status {
+      font-size: 1.5rem;
+      margin-bottom: 15px;
+      text-shadow: 0 0 10px rgba(255,255,255,0.3);
+    }
+
+    .scoreboard {
+      display: flex;
+      justify-content: space-around;
+      width: 300px;
+      margin-bottom: 20px;
+    }
+
+    .score {
+      background: rgba(255,255,255,0.15);
+      padding: 10px 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(255,255,255,0.2);
+    }
+
+    button {
+      background: linear-gradient(90deg, #00c6ff, #0072ff);
+      color: white;
+      border: none;
+      padding: 10px 25px;
+      border-radius: 25px;
+      font-size: 1rem;
+      cursor: pointer;
+      box-shadow: 0 0 10px rgba(0, 114, 255, 0.6);
+      transition: all 0.3s ease;
+    }
+
+    button:hover {
+      background: linear-gradient(90deg, #0072ff, #00c6ff);
+      transform: scale(1.1);
+      box-shadow: 0 0 20px rgba(0, 114, 255, 0.9);
+    }
+
+    @keyframes winner {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.2); background: rgba(255,255,255,0.4); }
+      100% { transform: scale(1); }
+    }
+
+    .winner {
+      animation: winner 0.6s ease-in-out 3;
+    }
+  </style>
+</head>
+<body>
+  <h1>Tic Tac Toe</h1>
+  <div class="scoreboard">
+    <div class="score">X: <span id="xScore">0</span></div>
+    <div class="score">O: <span id="oScore">0</span></div>
+  </div>
+  <div class="status" id="status">Player X's Turn</div>
+  <div class="board" id="board"></div>
+  <button id="reset">Play Again</button>
+
+  <script>
+    const board = document.getElementById("board");
+    const status = document.getElementById("status");
+    const resetBtn = document.getElementById("reset");
+    const xScoreEl = document.getElementById("xScore");
+    const oScoreEl = document.getElementById("oScore");
+
+    let currentPlayer = "X";
+    let gameActive = true;
+    let xScore = 0, oScore = 0;
+    const cells = [];
+    const boardState = ["", "", "", "", "", "", "", "", ""];
+
+    function createBoard() {
+      for (let i = 0; i < 9; i++) {
+        const cell = document.createElement("div");
+        cell.classList.add("cell");
+        cell.addEventListener("click", () => handleCellClick(i));
+        board.appendChild(cell);
+        cells.push(cell);
+      }
+    }
+
+    function handleCellClick(i) {
+      if (!gameActive || boardState[i] !== "") return;
+      boardState[i] = currentPlayer;
+      cells[i].textContent = currentPlayer;
+      cells[i].classList.add("taken");
+      checkWinner();
+      currentPlayer = currentPlayer === "X" ? "O" : "X";
+      if (gameActive) status.textContent = `Player ${currentPlayer}'s Turn`;
+    }
+
+    function checkWinner() {
+      const winPatterns = [
+        [0,1,2],[3,4,5],[6,7,8],
+        [0,3,6],[1,4,7],[2,5,8],
+        [0,4,8],[2,4,6]
+      ];
+
+      for (const pattern of winPatterns) {
+        const [a, b, c] = pattern;
+        if (boardState[a] && boardState[a] === boardState[b] && boardState[a] === boardState[c]) {
+          highlightWinner(pattern);
+          gameActive = false;
+          if (boardState[a] === "X") xScore++;
+          else oScore++;
+          updateScores();
+          status.textContent = `Player ${boardState[a]} Wins! 🎉`;
+          return;
+        }
+      }
+
+      if (!boardState.includes("")) {
+        gameActive = false;
+        status.textContent = "It's a Draw 😐";
+      }
+    }
+
+    function highlightWinner(pattern) {
+      pattern.forEach(i => cells[i].classList.add("winner"));
+    }
+
+    function updateScores() {
+      xScoreEl.textContent = xScore;
+      oScoreEl.textContent = oScore;
+    }
+
+    resetBtn.addEventListener("click", () => {
+      boardState.fill("");
+      cells.forEach(cell => {
+        cell.textContent = "";
+        cell.classList.remove("taken", "winner");
+      });
+      currentPlayer = "X";
+      gameActive = true;
+      status.textContent = "Player X's Turn";
+    });
+
+    createBoard();
+  </script>
+</body>
+</html>
